@@ -6,6 +6,7 @@ import { ClipLoader } from "react-spinners";
 
 import AlertModal from "./components/AlertModal";
 function App() {
+  const [urlName, setUrlName] = useState("");
   const [loadingUrl, setLoadingUrl] = useState(false);
   const [responseUrl, setResponseUrl] = useState("");
   const [url, setUrl] = useState("");
@@ -19,34 +20,38 @@ function App() {
     if (!url) {
       setAlerError(true);
       return;
-    }
-    setLoadingUrl(true);
+    } else {
+      setLoadingUrl(true);
 
-    try {
-      const response = await fetch("http://localhost:4000/sendurl", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ urlss: url }),
-      });
+      try {
+        const response = await fetch("http://localhost:4000/sendurl", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ urlss: url }),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setUrlsList(
-          urlsList.concat({ url: data.mensage, expiri: data.duration })
-        );
-        setResponseUrl(data.mensage || "URL no disponible");
-
-        console.log(urlsList);
-      } else {
-        console.log("Error en la respuesta:", response);
-        setAlerError(true);
+        if (response.ok) {
+          const data = await response.json();
+          setUrlsList(
+            urlsList.concat({
+              url: data.mensage,
+              expiri: data.duration,
+              nameUrl: urlName,
+            })
+          );
+          setResponseUrl(data.mensage || "URL no disponible");
+          setUrlName("");
+        } else {
+          console.log("Error en la respuesta:", response);
+          setAlerError(true);
+        }
+      } catch (error) {
+        console.error("Error de red:", error);
+      } finally {
+        setLoadingUrl(false);
       }
-    } catch (error) {
-      console.error("Error de red:", error);
-    } finally {
-      setLoadingUrl(false);
     }
   };
   useEffect(() => {
@@ -79,12 +84,21 @@ function App() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
+
+            <input
+              type="text"
+              placeholder="Name (Optional)"
+              onChange={(e) => setUrlName(e.target.value)}
+              className="h-12 w-full px-4 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 border-none"
+            />
             <button className="h-10 w-full bg-blue-600 border-none text-white text-lg cursor-pointer font-medium font-mono rounded-md hover:bg-blue-500 transition-all duration-200">
               {loadingUrl ? <ClipLoader size={10} /> : "Buscar"}
             </button>
           </form>
         </div>
-        {urlsList.length > 0 ? <TableUrls listUrls={urlsList.reverse()} /> : null}
+        {urlsList.length > 0 ? (
+          <TableUrls listUrls={urlsList} newUrl={responseUrl} />
+        ) : null}
       </main>
 
       <footer className="bg-gray-800 text-white py-6">
